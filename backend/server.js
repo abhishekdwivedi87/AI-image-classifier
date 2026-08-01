@@ -1,12 +1,18 @@
+// server.js
 import express from "express";
 import mongoose from "mongoose";
 import multer from "multer";
 import cors from "cors";
 import authRoutes from "./routes/auth.js";
+import dotenv from "dotenv";
+
+dotenv.config(); // Load variables from backend/.env
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// ✅ Root route
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
@@ -17,15 +23,25 @@ app.use("/uploads", express.static("uploads"));
 // ✅ Auth routes
 app.use("/api/auth", authRoutes);
 
-// MongoDB connection
-mongoose.connect("mongodb+srv://abhishekdwivediofficial65_db_user:SjBgpM7PJCgbcPUm@cluster0.xwizykt.mongodb.net/?appName=Cluster0", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log("✅ Connected to MongoDB Atlas"))
-.catch(err => console.error("❌ MongoDB connection error:", err));
 
-// Schema for images
+// ✅ MongoDB connection (non‑SRV fallback)
+
+mongoose.connect(
+  process.env.MONGO_URI,  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000,
+  }
+)
+.then(() => console.log("✅ Connected to MongoDB Atlas"))
+.catch(err => {
+  console.error("❌ MongoDB connection error:", err.message);
+  process.exit(1);
+});
+
+
+
+// ✅ Schema for images
 const ImageSchema = new mongoose.Schema({
   filename: String,
   prediction: String,
@@ -51,16 +67,29 @@ app.post("/upload", upload.single("image"), async (req, res) => {
     prediction,
     confidence,
     imageUrl: `/uploads/${req.file.filename}`,
+    createdAt: new Date(),
   };
 
-  await ImageModel.create(result);
+  if (mongoose.connection.readyState === 1) {
+    await ImageModel.create(result);
+  } else {
+    fallbackHistory.unshift(result);
+  }
+
   res.json(result);
 });
 
 // ✅ History route
 app.get("/history", async (req, res) => {
-  const history = await ImageModel.find().sort({ createdAt: -1 });
+  if (mongoose.connection.readyState === 1) {
+    const history = await ImageModel.find().sort({ createdAt: -1 });
+    return res.json(history);
+  }
+
+  const history = fallbackHistory.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   res.json(history);
 });
 
-app.listen(5000, () => console.log("Server running on port 5000"));
+// ✅ Start server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
