@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
@@ -68,3 +69,28 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+=======
+# AI Image Classifier (MERN + TensorFlow.js)
+
+An AI-powered image classification web app built with the MERN stack and TensorFlow.js.  
+Users can sign up, log in, upload images, and view prediction history with analytics.
+
+## 🚀 Features
+- User authentication (signup/login with JWT)
+- Image upload and classification
+- Prediction history tracking
+- Analytics dashboard
+- Dark/Light mode toggle
+
+## 🛠️ Tech Stack
+- **Frontend:** React, Axios, CSS
+- **Backend:** Node.js, Express.js, MongoDB Atlas
+- **AI:** TensorFlow.js
+- **Deployment:** Vercel (frontend), Render (backend)
+
+## 📦 Installation
+Clone the repo:
+```bash
+git clone https://github.com/abhishekdwivedi87/ai-image-classifier.git
+cd ai-image-classifier
+>>>>>>> 7944754fd6c6eb14c2d85868a087b09653d615ba
