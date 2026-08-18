@@ -1,5 +1,5 @@
 import React from "react";
-import { FaUpload, FaHistory, FaChartBar } from "react-icons/fa";
+//import { FaUpload, FaHistory, FaChartBar } from "react-icons/fa";
 import "./App.css";
 
 
