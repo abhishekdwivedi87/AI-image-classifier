@@ -6,44 +6,68 @@ import * as mobilenet from "@tensorflow-models/mobilenet";
 import axios from "axios";
 import Loader from "./Loader";
 
+const API_URL = (process.env.REACT_APP_API_URL || "http://localhost:5000").replace(
+  /\/+$/,
+  ""
+);
+
 function ImageUploader({ onPrediction }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
     setLoading(true);
+    setError("");
+    const imageUrl = URL.createObjectURL(file);
 
-    await tf.setBackend("webgl");
-    await tf.ready();
+    try {
+      await tf.setBackend("webgl");
+      await tf.ready();
 
-    const img = document.createElement("img");
-    img.src = URL.createObjectURL(file);
-    await new Promise((resolve) => (img.onload = resolve));
+      const img = document.createElement("img");
+      img.src = imageUrl;
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = () => reject(new Error("The selected image could not be loaded."));
+      });
 
-    const model = await mobilenet.load();
-    const predictions = await model.classify(img);
+      const model = await mobilenet.load();
+      const predictions = await model.classify(img);
 
-    // ✅ Send all predictions to App.js for Analytics
-    if (onPrediction) {
-      onPrediction(predictions);
+      if (onPrediction) {
+        onPrediction(predictions);
+      }
+
+      const topPrediction = predictions[0];
+      if (!topPrediction) {
+        throw new Error("The model did not return a prediction.");
+      }
+
+      const formData = new FormData();
+      formData.append("image", file);
+      formData.append("prediction", topPrediction.className);
+      formData.append("confidence", topPrediction.probability);
+
+      const response = await axios.post(`${API_URL}/upload`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setResult(response.data);
+    } catch (uploadError) {
+      console.error("Image upload failed:", uploadError);
+      setError(
+        uploadError.response?.data?.error ||
+          uploadError.message ||
+          "Unable to classify or upload the image."
+      );
+    } finally {
+      URL.revokeObjectURL(imageUrl);
+      setLoading(false);
     }
-
-    // ✅ Save top prediction to backend
-    const topPrediction = predictions[0];
-    const formData = new FormData();
-    formData.append("image", file);
-    formData.append("prediction", topPrediction.className);
-    formData.append("confidence", topPrediction.probability);
-
-    const response = await axios.post(`${process.env.REACT_APP_API_URL}/upload`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    setResult(response.data);
-    setLoading(false);
   }
 
   return (
@@ -51,11 +75,12 @@ function ImageUploader({ onPrediction }) {
       <h2>Upload & Classify</h2>
       <input type="file" accept="image/*" onChange={handleUpload} />
       {loading && <Loader />}
+      {error && <p role="alert">{error}</p>}
 
       {result && (
         <div className="history-item">
           <img
-            src={`http://localhost:5000${result.imageUrl}`}
+            src={new URL(result.imageUrl, `${API_URL}/`).toString()}
             alt={result.filename}
             className="thumbnail"
           />

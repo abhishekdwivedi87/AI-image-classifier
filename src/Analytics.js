@@ -12,10 +12,11 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-function Analytics({ predictions }) {
-  // ✅ Use correct keys from MobileNet: className + probability
-  const labels = predictions.map((p) => p.className);
-  const dataValues = predictions.map((p) => Math.round(p.probability * 100));
+function Analytics({ predictions = [] }) {
+  const labels = predictions.map(({ className }) => className);
+  const dataValues = predictions.map(({ probability }) =>
+    Math.round(probability * 100)
+  );
 
   const data = {
     labels,

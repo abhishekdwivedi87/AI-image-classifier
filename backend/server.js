@@ -5,8 +5,15 @@ import multer from "multer";
 import cors from "cors";
 import authRoutes from "./routes/auth.js";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
-dotenv.config(); // Load variables from backend/.env
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, ".env") });
+
+const uploadsDirectory = path.join(__dirname, "uploads");
+const fallbackHistory = [];
 
 const app = express();
 app.use(cors());
@@ -18,7 +25,7 @@ app.get("/", (req, res) => {
 });
 
 // ✅ Serve uploaded files statically
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(uploadsDirectory));
 
 // ✅ Auth routes
 app.use("/api/auth", authRoutes);
@@ -27,7 +34,7 @@ app.use("/api/auth", authRoutes);
 // ✅ MongoDB connection (non‑SRV fallback)
 
 mongoose.connect(
-  process.env.MONGO_URI,  {
+  process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     serverSelectionTimeoutMS: 5000,
@@ -36,7 +43,7 @@ mongoose.connect(
 .then(() => console.log("✅ Connected to MongoDB Atlas"))
 .catch(err => {
   console.error("❌ MongoDB connection error:", err.message);
-  process.exit(1);
+  console.warn("Using in-memory history until MongoDB is available.");
 });
 
 
@@ -53,13 +60,17 @@ const ImageModel = mongoose.model("Image", ImageSchema);
 
 // ✅ Multer setup
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
+  destination: (req, file, cb) => cb(null, uploadsDirectory),
   filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
 });
 const upload = multer({ storage });
 
 // ✅ Upload route
 app.post("/upload", upload.single("image"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "An image file is required." });
+  }
+
   const { prediction, confidence } = req.body;
 
   const result = {
@@ -86,7 +97,9 @@ app.get("/history", async (req, res) => {
     return res.json(history);
   }
 
-  const history = fallbackHistory.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const history = fallbackHistory
+    .slice()
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   res.json(history);
 });
 
