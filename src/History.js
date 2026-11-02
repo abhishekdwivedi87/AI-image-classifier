@@ -1,13 +1,22 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { apiUrl, assetUrl } from "./api";
 
 function History() {
   const [history, setHistory] = useState([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function fetchHistory() {
-      const response = await axios.get("http://localhost:5000/history");
-      setHistory(response.data);
+      try {
+        const response = await axios.get(apiUrl("/history"));
+        setHistory(response.data);
+      } catch (fetchError) {
+        setError(
+          fetchError.response?.data?.error ||
+            "Unable to load prediction history."
+        );
+      }
     }
     fetchHistory();
   }, []);
@@ -15,11 +24,12 @@ function History() {
   return (
     <div>
       <h2>History</h2>
+      {error && <p role="alert">{error}</p>}
       <ul className="history-list">
         {history.map((item) => (
           <li key={item._id} className="history-item">
             <img
-              src={`http://localhost:5000${item.imageUrl}`}
+              src={assetUrl(item.imageUrl)}
               alt={item.filename}
               className="thumbnail"
             />

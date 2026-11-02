@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { apiUrl } from "./api";
 
 function Signup({ onSignup }) {
   const [email, setEmail] = useState("");
@@ -8,7 +9,7 @@ function Signup({ onSignup }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/signup", {
+      const res = await axios.post(apiUrl("/api/auth/signup"), {
         email,
         password,
       });

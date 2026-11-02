@@ -5,11 +5,7 @@ import "@tensorflow/tfjs-backend-webgl";
 import * as mobilenet from "@tensorflow-models/mobilenet";
 import axios from "axios";
 import Loader from "./Loader";
-
-const API_URL = (process.env.REACT_APP_API_URL || "http://localhost:5000").replace(
-  /\/+$/,
-  ""
-);
+import { apiUrl, assetUrl } from "./api";
 
 function ImageUploader({ onPrediction }) {
   const [result, setResult] = useState(null);
@@ -52,7 +48,7 @@ function ImageUploader({ onPrediction }) {
       formData.append("prediction", topPrediction.className);
       formData.append("confidence", topPrediction.probability);
 
-      const response = await axios.post(`${API_URL}/upload`, formData, {
+      const response = await axios.post(apiUrl("/upload"), formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -80,7 +76,7 @@ function ImageUploader({ onPrediction }) {
       {result && (
         <div className="history-item">
           <img
-            src={new URL(result.imageUrl, `${API_URL}/`).toString()}
+            src={assetUrl(result.imageUrl)}
             alt={result.filename}
             className="thumbnail"
           />
