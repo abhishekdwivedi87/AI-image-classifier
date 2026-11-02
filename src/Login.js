@@ -25,7 +25,7 @@ function Login({ onLogin }) {
         alert("Login failed: invalid response from server");
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Login error");
+      alert(err.response?.data?.message || err.message || "Login error");
     }
   };
 

@@ -14,6 +14,7 @@ function History() {
       } catch (fetchError) {
         setError(
           fetchError.response?.data?.error ||
+            fetchError.message ||
             "Unable to load prediction history."
         );
       }

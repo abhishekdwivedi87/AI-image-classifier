@@ -25,7 +25,7 @@ function Signup({ onSignup }) {
         alert("Signup failed: invalid response from server");
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Signup error");
+      alert(err.response?.data?.message || err.message || "Signup error");
     }
   };
 
